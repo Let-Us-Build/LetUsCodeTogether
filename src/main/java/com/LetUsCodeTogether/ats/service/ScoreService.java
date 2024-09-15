@@ -198,7 +198,8 @@ public class ScoreService {
             connection.getInputStream().close();
             return score;
         } catch (Exception e) {
-            throw new Exception("LeetCode Error: Internal Server Error, Please contact Administrator. ",e);
+            System.out.println("LeetCode Error: Internal Server Error, Please contact Administrator. "+e);
+            return null;
         }
     }
 
@@ -235,7 +236,7 @@ public class ScoreService {
             }
             score.setCalculatedTotalScore(score.getRatings());
         } catch (Exception e) {
-            throw new Exception("Hackkerrank Error: Internal Server Error", e);
+            System.out.println("Hackkerrank Error: Internal Server Error"+ e);
         }
         return score;
     }
@@ -281,10 +282,10 @@ public class ScoreService {
             } else {
                 System.out.println("CodeForces Rating Not found");
             }
-            return score;
         } catch (Exception e) {
-            throw new Exception("CodeForces Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("CodeForces Error: Internal Server Error, Please Contact Administrator"+ e);
         }
+        return score;
     }
 
     private Score getScoreFromSpoj(String usernameOnPlatform) throws Exception {
@@ -308,10 +309,10 @@ public class ScoreService {
             } else {
                 System.out.println("Spoj Score Not found");
             }
-            return score;
         } catch (Exception e) {
-            throw new Exception("Spoj Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("Spoj Error: Internal Server Error, Please Contact Administrator"+ e);
         }
+        return score;
     }
 
     private Score getScoreFromInterviewbitV1(String usernameOnPlatform) throws Exception {
@@ -331,10 +332,10 @@ public class ScoreService {
             } else {
                 System.out.println("Interviewbit Score Not found");
             }
-            return score;
         } catch (Exception e) {
-            throw new Exception("Interviewbit Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("Interviewbit Error: Internal Server Error, Please Contact Administrator"+ e);
         }
+        return score;
     }
 
 
@@ -364,7 +365,7 @@ public class ScoreService {
                 System.out.println("Score not found for InterviewBit(V2)");
             }
         } catch (Exception e) {
-            throw new Exception("Interviewbit Error: Internal Server Error", e);
+            System.out.println("Interviewbit Error: Internal Server Error"+ e);
         }
         return score;
     }
@@ -407,10 +408,10 @@ public class ScoreService {
             } else {
                 System.out.println("Codechef Rating Not found");
             }
-            return score;
         } catch (Exception e) {
-            throw new Exception("Codechef Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("Codechef Error: Internal Server Error, Please Contact Administrator "+ e);
         }
+        return score;
     }
 
     public Score getByUserIdAndPlatformId(int userId, int platformId) {
@@ -494,12 +495,10 @@ public class ScoreService {
             } else {
                 score.setCalculatedTotalScore(score.getNoOfProblemsSolved() * 10);
             }
-
-            return score;
-
         } catch (Exception e) {
-            throw new Exception("Codeforces Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("Codeforces Error: Internal Server Error, Please Contact Administrator"+ e);
         }
+        return score;
     }
 
     private String fetchCodeforcesJSONResponse(String urlString) throws Exception {
@@ -510,7 +509,7 @@ public class ScoreService {
 
         int responseCode = conn.getResponseCode();
         if (responseCode != 200) {
-            throw new Exception("Error: Unable to connect to the API, Response Code: " + responseCode);
+            System.out.println("Error: Unable to connect to the API, Response Code: " + responseCode);
         }
 
         // Read the API response
