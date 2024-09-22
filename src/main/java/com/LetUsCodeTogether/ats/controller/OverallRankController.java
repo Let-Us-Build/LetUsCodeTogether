@@ -15,7 +15,12 @@ public class OverallRankController {
     private OverallRankService overallRankService;
 
     @GetMapping("/overallrank/{userId}")
-    public OverallRank getPlatformByName(@PathVariable int userId) throws Exception {
-        return overallRankService.getOverallRank(userId);
+    public OverallRank getOverallRankByUserId(@PathVariable int userId){
+        return overallRankService.getOverallRankByUserId(userId);
+    }
+
+    @GetMapping("/overallranks/")
+    public List<OverallRank> getAllOverallRanks() {
+        return overallRankService.getAllOverAllRanks();
     }
 }

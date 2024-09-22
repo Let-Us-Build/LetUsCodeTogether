@@ -72,24 +72,25 @@ public class OverallRankService {
         }
     }
 
-    public OverallRank getOverallRank(int userId) throws Exception {
+    public OverallRank getOverallRankByUserId(int userId){
         try{
             Optional<OverallRank> overallRank = overallRankRepository.findByUserId(userId);
             if(overallRank.isPresent()){
                 return overallRank.get();
             }
-            return null;
         } catch (Exception e) {
-            throw new Exception("Failed to fetch overall rank.\n", e);
+            System.out.println("Failed to fetch overall rank.\n" + e);
         }
+        return null;
     }
 
-    public List<OverallRank> getAllOverAllRanks() throws Exception {
+    public List<OverallRank> getAllOverAllRanks(){
         try{
             List<OverallRank> overallRanks = overallRankRepository.findAll();
             return overallRanks;
         } catch(Exception e) {
-            throw new Exception("Error in fetching overall ranks\n", e);
+            System.out.println("Error in fetching overall ranks\n"+ e);
         }
+        return null;
     }
 }

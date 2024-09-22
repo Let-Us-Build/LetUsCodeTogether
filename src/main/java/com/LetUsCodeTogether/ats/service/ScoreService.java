@@ -1,5 +1,6 @@
 package com.LetUsCodeTogether.ats.service;
 
+import com.LetUsCodeTogether.ats.entity.DailyActivity;
 import com.LetUsCodeTogether.ats.entity.Platform;
 import com.LetUsCodeTogether.ats.entity.Score;
 import com.LetUsCodeTogether.ats.entity.UserPlatformMapping;
@@ -11,6 +12,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -53,6 +55,7 @@ public class ScoreService {
                 }
                 calculateAndSetRanksForPlatforms();
                 overallRankService.calculateOverallRank();
+                addDailyActivityForUser(userId, scores);
             }
             return "Scores Added/Updated Successfully";
         } catch (Exception e) {
@@ -60,7 +63,59 @@ public class ScoreService {
         }
     }
 
-    private List<Score> calculateScoreFromPlatforms(int userId) throws Exception {
+    @Async
+    private void addDailyActivityForUser(int userId, List<Score> newScores) {
+        List<Score> scores;
+        if (userId == 0) {
+            scores = getAllScores();
+        } else {
+            scores = getScoreByUserId(userId);
+        }
+        List<DailyActivity> dailyActivities = null;
+        Map<String, Score> scoreMap = mapScoreToAKey(scores);
+        Map<String, Score> newScoreMap = mapScoreToAKey(newScores);
+        for (Map.Entry<String, Score> entry : newScoreMap.entrySet()) {
+            String key = entry.getKey();
+            Score newScore = entry.getValue();
+            Score oldScore = scoreMap.get(key);
+            DailyActivity dailyActivity = new DailyActivity();
+            dailyActivity.setUserId(newScore.getUserId());
+            dailyActivity.setPlatformId(newScore.getPlatformId());
+            long problemsSolvedDifference = (oldScore != null)
+                    ? newScore.getNoOfProblemsSolved() - oldScore.getNoOfProblemsSolved()
+                    : newScore.getNoOfProblemsSolved();
+            dailyActivity.setProblemsSolved(problemsSolvedDifference);
+            long contestsParticipatedDifference = (oldScore != null)
+                    ? newScore.getNoOfContests() - oldScore.getNoOfContests()
+                    : newScore.getNoOfContests();
+            dailyActivity.setContestsParticipated(contestsParticipatedDifference);
+            long ratingsDifference = (oldScore != null)
+                    ? (long) (newScore.getRatings() - oldScore.getRatings())
+                    : (long) newScore.getNoOfContests();
+            dailyActivity.setRatings(contestsParticipatedDifference);
+            Double pointsDifference = (oldScore != null)
+                    ? newScore.getPoints() - oldScore.getPoints()
+                    : newScore.getPoints();
+            dailyActivity.setPoints(pointsDifference);
+            Double scoreDifference = (oldScore != null)
+                    ? newScore.getCalculatedTotalScore() - oldScore.getCalculatedTotalScore()
+                    : newScore.getCalculatedTotalScore();
+            dailyActivity.setCalculatedTotalScore(scoreDifference);
+            dailyActivity.setPreviousScore(oldScore.getCalculatedTotalScore());
+            dailyActivities.add(dailyActivity);
+        }
+    }
+
+    private Map<String, Score> mapScoreToAKey(List<Score> scores) {
+        Map<String, Score> scoreMap = new HashMap<>();
+        for (Score score : scores) {
+            String key = score.getUserId() + "-" + score.getPlatformId();
+            scoreMap.put(key, score);
+        }
+        return scoreMap;
+    }
+
+    private List<Score> calculateScoreFromPlatforms(int userId) {
         try {
             List<Score> scores = new ArrayList<>();
             List<UserPlatformMapping> userPlatformMappings;
@@ -113,7 +168,7 @@ public class ScoreService {
         }
     }
 
-    private Score getScoreFromLeetcode(String usernameOnPlatform) throws Exception {
+    private Score getScoreFromLeetcode(String usernameOnPlatform) {
         Score score = new Score();
         if(usernameOnPlatform.equalsIgnoreCase("")){
             return score;
@@ -198,7 +253,8 @@ public class ScoreService {
             connection.getInputStream().close();
             return score;
         } catch (Exception e) {
-            throw new Exception("LeetCode Error: Internal Server Error, Please contact Administrator. ",e);
+            System.out.println("LeetCode Error: Internal Server Error, Please contact Administrator. "+e);
+            return null;
         }
     }
 
@@ -235,12 +291,12 @@ public class ScoreService {
             }
             score.setCalculatedTotalScore(score.getRatings());
         } catch (Exception e) {
-            throw new Exception("Hackkerrank Error: Internal Server Error", e);
+            System.out.println("Hackkerrank Error: Internal Server Error"+ e);
         }
         return score;
     }
 
-    private Score getScoreFromCodeforces(String usernameOnPlatform) throws Exception {
+    private Score getScoreFromCodeforcesV1(String usernameOnPlatform){
         System.setProperty("http.proxyHost", "proxy.example.com");
         System.setProperty("http.proxyPort", "8080");
         Score score = new Score();
@@ -281,13 +337,13 @@ public class ScoreService {
             } else {
                 System.out.println("CodeForces Rating Not found");
             }
-            return score;
         } catch (Exception e) {
-            throw new Exception("CodeForces Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("CodeForces Error: Internal Server Error, Please Contact Administrator"+ e);
         }
+        return score;
     }
 
-    private Score getScoreFromSpoj(String usernameOnPlatform) throws Exception {
+    private Score getScoreFromSpoj(String usernameOnPlatform) {
         Score score = new Score();
         if(usernameOnPlatform.equalsIgnoreCase("")){
             return score;
@@ -308,13 +364,13 @@ public class ScoreService {
             } else {
                 System.out.println("Spoj Score Not found");
             }
-            return score;
         } catch (Exception e) {
-            throw new Exception("Spoj Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("Spoj Error: Internal Server Error, Please Contact Administrator"+ e);
         }
+        return score;
     }
 
-    private Score getScoreFromInterviewbitV1(String usernameOnPlatform) throws Exception {
+    private Score getScoreFromInterviewbitV1(String usernameOnPlatform) {
         Score score = new Score();
         if(usernameOnPlatform.equalsIgnoreCase("")){
             return score;
@@ -331,13 +387,11 @@ public class ScoreService {
             } else {
                 System.out.println("Interviewbit Score Not found");
             }
-            return score;
         } catch (Exception e) {
-            throw new Exception("Interviewbit Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("Interviewbit Error: Internal Server Error, Please Contact Administrator"+ e);
         }
+        return score;
     }
-
-
 
     private Score getScoreFromInterviewbitV2(String usernameOnPlatform) throws Exception {
         Score score = new Score();
@@ -364,12 +418,12 @@ public class ScoreService {
                 System.out.println("Score not found for InterviewBit(V2)");
             }
         } catch (Exception e) {
-            throw new Exception("Interviewbit Error: Internal Server Error", e);
+            System.out.println("Interviewbit Error: Internal Server Error"+ e);
         }
         return score;
     }
 
-    private Score getScoreFromCodechef(String usernameOnPlatform) throws Exception {
+    private Score getScoreFromCodechef(String usernameOnPlatform) {
         Score score = new Score();
         if(usernameOnPlatform.equalsIgnoreCase("")){
             return score;
@@ -407,10 +461,10 @@ public class ScoreService {
             } else {
                 System.out.println("Codechef Rating Not found");
             }
-            return score;
         } catch (Exception e) {
-            throw new Exception("Codechef Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("Codechef Error: Internal Server Error, Please Contact Administrator "+ e);
         }
+        return score;
     }
 
     public Score getByUserIdAndPlatformId(int userId, int platformId) {
@@ -442,30 +496,26 @@ public class ScoreService {
         }
     }
 
-    public Score getScoreFromCodeforcesV2(String usernameOnPlatform) throws Exception {
+    public Score getScoreFromCodeforcesV2(String usernameOnPlatform) {
         Score score = new Score();
 
         if (usernameOnPlatform.equalsIgnoreCase("")) {
             return score;
         }
 
-        // API URLs
         String userInfoApiUrl = "https://codeforces.com/api/user.info?handles=" + usernameOnPlatform;
         String contestHistoryApiUrl = "https://codeforces.com/api/user.rating?handle=" + usernameOnPlatform;
         String userStatusApiUrl = "https://codeforces.com/api/user.status?handle=" + usernameOnPlatform;
 
         try {
-            // Fetch user info (rating)
             String userInfoResponse = fetchCodeforcesJSONResponse(userInfoApiUrl);
             ObjectMapper mapper = new ObjectMapper();
             JsonNode userInfoRootNode = mapper.readTree(userInfoResponse);
             JsonNode userData = userInfoRootNode.path("result").get(0);
 
-            // Extract rating
-            int rating = userData.path("rating").asInt(0);  // Default to 0 if no rating available
+            int rating = userData.path("rating").asInt(0);
             score.setRatings(rating);
 
-            // Fetch contest participation details (number of contests)
             String contestHistoryResponse = fetchCodeforcesJSONResponse(contestHistoryApiUrl);
             JsonNode contestHistoryRootNode = mapper.readTree(contestHistoryResponse);
             int noOfContestsParticipated = contestHistoryRootNode.path("result").size(); // Count of contests
@@ -486,7 +536,6 @@ public class ScoreService {
 
             score.setNoOfProblemsSolved(uniqueProblemsSolved.size());
 
-            // Calculate score based on extracted data
             if (score.getNoOfContests() >= 3 && score.getRatings() > 1200) {
                 score.setCalculatedTotalScore(
                         (int) ((score.getNoOfProblemsSolved() * 10) + (Math.pow(score.getRatings() - 1200, 2) / 30))
@@ -494,12 +543,10 @@ public class ScoreService {
             } else {
                 score.setCalculatedTotalScore(score.getNoOfProblemsSolved() * 10);
             }
-
-            return score;
-
         } catch (Exception e) {
-            throw new Exception("Codeforces Error: Internal Server Error, Please Contact Administrator", e);
+            System.out.println("Codeforces Error: Internal Server Error, Please Contact Administrator"+ e);
         }
+        return score;
     }
 
     private String fetchCodeforcesJSONResponse(String urlString) throws Exception {
@@ -510,10 +557,9 @@ public class ScoreService {
 
         int responseCode = conn.getResponseCode();
         if (responseCode != 200) {
-            throw new Exception("Error: Unable to connect to the API, Response Code: " + responseCode);
+            System.out.println("Error: Unable to connect to the API, Response Code: " + responseCode);
         }
 
-        // Read the API response
         Scanner sc = new Scanner(url.openStream());
         StringBuilder jsonResponse = new StringBuilder();
         while (sc.hasNext()) {
@@ -522,6 +568,14 @@ public class ScoreService {
         sc.close();
 
         return jsonResponse.toString();
+    }
+
+    public List<Score> getAllScores() {
+        return scoreRepository.findAll();
+    }
+
+    public List<Score> getScoreByUserId(int userId) {
+        return scoreRepository.findAllByUserId(userId);
     }
 
 }

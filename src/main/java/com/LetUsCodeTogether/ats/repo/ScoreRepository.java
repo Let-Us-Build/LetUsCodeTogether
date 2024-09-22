@@ -10,4 +10,6 @@ public interface ScoreRepository extends JpaRepository<Score, Integer> {
     Score findByUserIdAndPlatformId(int userId, int platformId);
 
     List<Score> findAllByPlatformId(int platformId);
+
+    List<Score> findAllByUserId(int userId);
 }
