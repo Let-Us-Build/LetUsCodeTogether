@@ -19,4 +19,8 @@ public interface DailyActivityRepository extends JpaRepository<DailyActivity, Lo
             @Param("platformId") Integer platformId
     );
 
+
+    DailyActivity findTopByUserIdAndPlatformIdOrderByCreatedDateDesc(long userId, int platformId);
+
+    DailyActivity findTopByUserIdOrderByCreatedDateDesc(long userId);
 }

@@ -16,7 +16,7 @@ public class Score {
 
     @JsonProperty
     @Column(name = "user_id")
-    private Integer userId;
+    private long userId;
 
     @JsonProperty
     @Column(name = "platform_id")
@@ -59,11 +59,11 @@ public class Score {
         this.scoreId = scoreId;
     }
 
-    public Integer getUserId() {
+    public long getUserId() {
         return userId;
     }
 
-    public void setUserId(Integer userId) {
+    public void setUserId(long userId) {
         this.userId = userId;
     }
 
@@ -135,7 +135,7 @@ public class Score {
         this.luctRank = luctRank;
     }
 
-    public Score(int scoreId, Integer userId, Integer platformId, int noOfProblemsSolved, int noOfContests, double ratings, double points, int calculatedTotalScore, Calendar createdDate, int luctRank) {
+    public Score(int scoreId, long userId, Integer platformId, int noOfProblemsSolved, int noOfContests, double ratings, double points, int calculatedTotalScore, Calendar createdDate, int luctRank) {
         this.scoreId = scoreId;
         this.userId = userId;
         this.platformId = platformId;

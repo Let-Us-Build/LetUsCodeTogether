@@ -21,12 +21,12 @@ public class DailyActivityService {
                     dailyActivity.getUserId(),
                     dailyActivity.getPlatformId()
             );
-
+    System.out.println(dailyActivity.getCreatedDate());
             boolean isCreatedByScheduler = false;
             boolean isCreatedByUser = false;
 
             for (DailyActivity activity : dailyActivities) {
-                if (activity.getUserId() == 0) {
+                if (activity.getCreatedBy() == 0) {
                     isCreatedByScheduler = true;
                 } else {
                     isCreatedByUser = true;
@@ -53,7 +53,15 @@ public class DailyActivityService {
     }
 
 
-    public List<DailyActivity> getDailyActivityByCreatedDateUserIdAndPlatformId(Calendar ActivityDate, long userId, Integer platformId) {
-        return dailyActivityRepository.findByCreatedDateAndUserIdAndPlatformId(ActivityDate, userId, platformId);
+    public List<DailyActivity> getDailyActivityByCreatedDateUserIdAndPlatformId(Calendar activityDate, long userId, Integer platformId) {
+        return dailyActivityRepository.findByCreatedDateAndUserIdAndPlatformId(activityDate, userId, platformId);
+    }
+
+    public DailyActivity getLatestActivityByUserIdAndPlatformId(long userId, int platformId) {
+        return dailyActivityRepository.findTopByUserIdAndPlatformIdOrderByCreatedDateDesc(userId, platformId);
+    }
+
+    public DailyActivity getLatestActivity(Long userId) {
+        return dailyActivityRepository.findTopByUserIdOrderByCreatedDateDesc(userId);
     }
 }

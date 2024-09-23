@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ScoreService {
@@ -36,9 +37,13 @@ public class ScoreService {
     @Autowired
     private OverallRankService overallRankService;
 
+    @Autowired
+    private DailyActivityService dailyActivityService;
+
     public String addOrUpdateScore(int userId) throws Exception {
         try {
             List<Score> scores = calculateScoreFromPlatforms(userId);
+            addDailyActivityForUser(userId, scores);
             for (Score score :
                     scores) {
                 Score existingScore = scoreRepository.findByUserIdAndPlatformId(score.getUserId(), score.getPlatformId());
@@ -55,7 +60,6 @@ public class ScoreService {
                 }
                 calculateAndSetRanksForPlatforms();
                 overallRankService.calculateOverallRank();
-                addDailyActivityForUser(userId, scores);
             }
             return "Scores Added/Updated Successfully";
         } catch (Exception e) {
@@ -71,9 +75,10 @@ public class ScoreService {
         } else {
             scores = getScoreByUserId(userId);
         }
-        List<DailyActivity> dailyActivities = null;
         Map<String, Score> scoreMap = mapScoreToAKey(scores);
         Map<String, Score> newScoreMap = mapScoreToAKey(newScores);
+        Map<String, Long> platformStreakMap = calculatePlatformStreak(newScores, scoreMap);
+        Map<Long, Long> overallStreakMap = calculateOverallStreak(newScores, scoreMap);
         for (Map.Entry<String, Score> entry : newScoreMap.entrySet()) {
             String key = entry.getKey();
             Score newScore = entry.getValue();
@@ -102,7 +107,18 @@ public class ScoreService {
                     : newScore.getCalculatedTotalScore();
             dailyActivity.setCalculatedTotalScore(scoreDifference);
             dailyActivity.setPreviousScore(oldScore.getCalculatedTotalScore());
-            dailyActivities.add(dailyActivity);
+            dailyActivity.setScoreDifference(scoreDifference);
+            Long platformStreak = platformStreakMap.getOrDefault(key, 1L);
+            dailyActivity.setStreakInDays(platformStreak);
+            Long overallStreak = overallStreakMap.getOrDefault(newScore.getUserId(), 1L);
+            dailyActivity.setOverallStreakInDays(overallStreak);
+            if (userId != 0) {
+                dailyActivity.setCreatedBy(newScore.getUserId());
+            } else {
+                dailyActivity.setCreatedBy(userId);
+            }
+            dailyActivity.setCreatedDate(null);
+            dailyActivityService.addDailyActivity(dailyActivity);
         }
     }
 
@@ -113,6 +129,70 @@ public class ScoreService {
             scoreMap.put(key, score);
         }
         return scoreMap;
+    }
+
+    private Map<String, Long> calculatePlatformStreak(List<Score> newScores, Map<String, Score> oldScoreMap) {
+        Map<String, Long> platformStreakMap = new HashMap<>();
+        for (Score newScore : newScores) {
+            long userId = newScore.getUserId();
+            int platformId = newScore.getPlatformId();
+            String key = userId + "-" + platformId;
+            Score oldScore = oldScoreMap.get(key);
+            DailyActivity lastActivity = dailyActivityService.getLatestActivityByUserIdAndPlatformId(userId, platformId);
+            Long platformStreak = 1L;
+            if (lastActivity != null && oldScore != null && hasActivityChanged(newScore, oldScore)) {
+                Calendar lastActivityDate = lastActivity.getCreatedDate();
+                Calendar today = Calendar.getInstance();
+                today.add(Calendar.DAY_OF_YEAR, -1);
+                if (isSameDay(today, lastActivityDate)) {
+                    platformStreak = lastActivity.getStreakInDays() + 1;
+                }
+            }
+            platformStreakMap.put(key, platformStreak);
+        }
+        return platformStreakMap;
+    }
+
+    private Map<Long, Long> calculateOverallStreak(List<Score> newScores, Map<String, Score> oldScoreMap) {
+        Map<Long, Long> overallStreakMap = new HashMap<>();
+        Set<Long> userIds = newScores.stream()
+                .map(Score::getUserId)
+                .collect(Collectors.toSet());
+        for (Long userId : userIds) {
+            DailyActivity lastOverallActivity = dailyActivityService.getLatestActivity(userId);
+            Long overallStreak = 1L;
+            boolean activityChanged = newScores.stream()
+                    .filter(score -> score.getUserId() == userId)
+                    .anyMatch(newScore -> {
+                        String key = newScore.getUserId() + "-" + newScore.getPlatformId();
+                        Score oldScore = oldScoreMap.get(key);
+                        return oldScore != null && hasActivityChanged(newScore, oldScore);
+                    });
+            if (lastOverallActivity != null && activityChanged) {
+                Calendar lastActivityDate = lastOverallActivity.getCreatedDate();
+                Calendar today = Calendar.getInstance();
+                today.add(Calendar.DAY_OF_YEAR, -1);
+                if (isSameDay(today, lastActivityDate)) {
+                    overallStreak = lastOverallActivity.getOverallStreakInDays() + 1;
+                }
+            }
+            overallStreakMap.put(userId, overallStreak);
+        }
+        return overallStreakMap;
+    }
+
+
+    private boolean hasActivityChanged(Score newScore, Score oldScore) {
+        return (newScore.getNoOfProblemsSolved() != oldScore.getNoOfProblemsSolved()) ||
+                (newScore.getNoOfContests() != oldScore.getNoOfContests()) ||
+                (Double.compare(newScore.getPoints(), oldScore.getPoints()) != 0) ||
+                (Double.compare(newScore.getRatings(), oldScore.getRatings()) != 0);
+    }
+
+
+    private boolean isSameDay(Calendar day1, Calendar day2) {
+        return day1.get(Calendar.YEAR) == day2.get(Calendar.YEAR) &&
+                day1.get(Calendar.DAY_OF_YEAR) == day2.get(Calendar.DAY_OF_YEAR);
     }
 
     private List<Score> calculateScoreFromPlatforms(int userId) {
