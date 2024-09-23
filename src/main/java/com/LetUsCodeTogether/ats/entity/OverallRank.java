@@ -16,7 +16,7 @@ public class OverallRank {
 
     @JsonProperty
     @Column(name = "user_id")
-    private Integer userId;
+    private long userId;
 
     @JsonProperty
     @Column(name = "total_score")
@@ -39,11 +39,11 @@ public class OverallRank {
         this.overallRankId = overallRankId;
     }
 
-    public Integer getUserId() {
+    public long getUserId() {
         return userId;
     }
 
-    public void setUserId(Integer userId) {
+    public void setUserId(long userId) {
         this.userId = userId;
     }
 

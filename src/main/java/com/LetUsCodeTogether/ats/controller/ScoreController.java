@@ -15,7 +15,7 @@ public class ScoreController {
     @Autowired
     public ScoreService scoreService;
 
-    @GetMapping("/scores/addorupdate/{userId}")
+    @PostMapping("/scores/addorupdate/{userId}")
     public String addOrUpdateScores(@PathVariable int userId) throws Exception {
         return scoreService.addOrUpdateScore(userId);
     }

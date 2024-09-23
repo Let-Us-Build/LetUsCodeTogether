@@ -28,7 +28,7 @@ public class OverallRankService {
             Sort sort = Sort.by(Sort.Direction.ASC, "userId");
             List<Score> scores = scoreRepository.findAll(sort);
             List<OverallRank> overallRanks = new ArrayList<>();
-            int currentUserId = -1;
+            long currentUserId = -1;
             double totalScore = 0;
 
             for (Score score : scores) {

@@ -7,7 +7,7 @@ import java.util.List;
 
 
 public interface ScoreRepository extends JpaRepository<Score, Integer> {
-    Score findByUserIdAndPlatformId(int userId, int platformId);
+    Score findByUserIdAndPlatformId(long userId, int platformId);
 
     List<Score> findAllByPlatformId(int platformId);
 
