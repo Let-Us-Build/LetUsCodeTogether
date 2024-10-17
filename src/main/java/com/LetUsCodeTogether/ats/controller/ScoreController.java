@@ -16,7 +16,7 @@ public class ScoreController {
     public ScoreService scoreService;
 
     @PostMapping("/scores/addorupdate/{userId}")
-    public String addOrUpdateScores(@PathVariable int userId) throws Exception {
+    public String addOrUpdateScores(@PathVariable("userId") int userId) throws Exception {
         return scoreService.addOrUpdateScore(userId);
     }
 

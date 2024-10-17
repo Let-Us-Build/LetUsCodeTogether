@@ -57,7 +57,7 @@ public class DailyActivity {
 
     @JsonProperty
     @Column(name = "overall_streak_in_days")
-    private Long OverallStreakInDays;
+    private Long overallStreakInDays;
 
     @JsonProperty
     @Column(name = "created_by", nullable = false)
@@ -157,11 +157,11 @@ public class DailyActivity {
     }
 
     public Long getOverallStreakInDays() {
-        return OverallStreakInDays;
+        return overallStreakInDays;
     }
 
     public void setOverallStreakInDays(Long overallStreakInDays) {
-        OverallStreakInDays = overallStreakInDays;
+        this.overallStreakInDays = overallStreakInDays;
     }
 
     public long getCreatedBy() {
@@ -199,7 +199,7 @@ public class DailyActivity {
         this.previousScore = previousScore;
         this.scoreDifference = scoreDifference;
         this.streakInDays = streakInDays;
-        OverallStreakInDays = overallStreakInDays;
+        this.overallStreakInDays = overallStreakInDays;
         this.createdBy = createdBy;
         this.createdDate = createdDate;
     }
