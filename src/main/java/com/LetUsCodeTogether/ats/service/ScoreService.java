@@ -82,7 +82,7 @@ public class ScoreService {
         for (Map.Entry<String, Score> entry : newScoreMap.entrySet()) {
             String key = entry.getKey();
             Score newScore = entry.getValue();
-            Score oldScore = scoreMap.get(key);
+            Score oldScore = scoreMap.getOrDefault(key, null);
             DailyActivity dailyActivity = new DailyActivity();
             dailyActivity.setUserId(newScore.getUserId());
             dailyActivity.setPlatformId(newScore.getPlatformId());
@@ -106,7 +106,9 @@ public class ScoreService {
                     ? newScore.getCalculatedTotalScore() - oldScore.getCalculatedTotalScore()
                     : newScore.getCalculatedTotalScore();
             dailyActivity.setCalculatedTotalScore(scoreDifference);
-            dailyActivity.setPreviousScore(oldScore.getCalculatedTotalScore());
+            if(oldScore!=null) {
+                dailyActivity.setPreviousScore(oldScore.getCalculatedTotalScore());
+            }
             dailyActivity.setScoreDifference(scoreDifference);
             Long platformStreak = platformStreakMap.getOrDefault(key, 1L);
             dailyActivity.setStreakInDays(platformStreak);
@@ -131,6 +133,7 @@ public class ScoreService {
         return scoreMap;
     }
 
+    @Async
     private Map<String, Long> calculatePlatformStreak(List<Score> newScores, Map<String, Score> oldScoreMap) {
         Map<String, Long> platformStreakMap = new HashMap<>();
         for (Score newScore : newScores) {
@@ -153,6 +156,7 @@ public class ScoreService {
         return platformStreakMap;
     }
 
+    @Async
     private Map<Long, Long> calculateOverallStreak(List<Score> newScores, Map<String, Score> oldScoreMap) {
         Map<Long, Long> overallStreakMap = new HashMap<>();
         Set<Long> userIds = newScores.stream()
@@ -204,9 +208,15 @@ public class ScoreService {
             } else {
                 userPlatformMappings = userPlatformMappingService.getByUserId(userId);
             }
+            List<Platform> platforms = platformService.getAllPlatforms();
+            Map<Integer, Platform> platformMap = new HashMap<>();
+            for(Platform platform: platforms) {
+                platformMap.put(platform.getPlatformId(), platform);
+            }
             for (UserPlatformMapping userPlatformMapping :
                     userPlatformMappings) {
-                Platform platform = platformService.getPlatformById(userPlatformMapping.getPlatformId());
+                Platform platform = platformMap.getOrDefault(userPlatformMapping.getPlatformId(), null);
+                //Platform platform = platformService.getPlatformById(userPlatformMapping.getPlatformId());
                 Score score = new Score();
                 score.setPlatformId(userPlatformMapping.getPlatformId());
                 score.setUserId(userPlatformMapping.getUserId());
@@ -514,8 +524,6 @@ public class ScoreService {
             Element ratingElement = document.selectFirst("div.rating-number");
             Element noOfPracticeProblemSolvedElement =
                     document.selectFirst("section.problems-solved h3:contains(Total Problems Solved)");
-//            Element noOfPracticeProblemSolvedElement =
-//                    document.selectFirst("section.problems-solved h3:contains(Practice Problems)");
             Element noOfContestProblemSolvedElement =
                     document.selectFirst("section.problems-solved h3:contains(Contests)");
             Element noOfContestsParticipatedElement = document.selectFirst("div.contest-participated-count");
@@ -524,11 +532,6 @@ public class ScoreService {
                 score.setNoOfContests(Integer.parseInt(noOfContestsParticipatedElement.text().substring(30)));
                 String extractedText = noOfPracticeProblemSolvedElement.text();
                 Integer noOfProblemsSolved = Integer.parseInt(extractedText.substring(23));
-//                Integer noOfProblemsSolved = Integer.parseInt(extractedText.substring(extractedText.indexOf("(")+1,
-//                        extractedText.indexOf(")")));
-//                extractedText = noOfContestProblemSolvedElement.text();
-//                noOfProblemsSolved += Integer.parseInt(extractedText.substring(extractedText.indexOf("(")+1,
-//                        extractedText.indexOf(")")));
                 score.setNoOfProblemsSolved(noOfProblemsSolved);
                 if(score.getNoOfContests()>=3 && score.getRatings() > 1300){
                     score.setCalculatedTotalScore(

@@ -21,7 +21,6 @@ public class DailyActivityService {
                     dailyActivity.getUserId(),
                     dailyActivity.getPlatformId()
             );
-    System.out.println(dailyActivity.getCreatedDate());
             boolean isCreatedByScheduler = false;
             boolean isCreatedByUser = false;
 
