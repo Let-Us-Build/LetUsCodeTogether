@@ -8,7 +8,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import java.io.IOException;
 
 
-//@SpringBootApplication
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
 @EnableAsync
 public class AtsApplication {
