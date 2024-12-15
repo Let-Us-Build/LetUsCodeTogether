@@ -1,7 +1,9 @@
 package com.LetUsCodeTogether.ats.service;
 
 import com.LetUsCodeTogether.ats.entity.OverallRank;
+import com.LetUsCodeTogether.ats.entity.Platform;
 import com.LetUsCodeTogether.ats.entity.Score;
+import com.LetUsCodeTogether.ats.entity.User;
 import com.LetUsCodeTogether.ats.repo.OverallRankRepository;
 import com.LetUsCodeTogether.ats.repo.ScoreRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,15 +11,20 @@ import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class OverallRankService {
     @Autowired
     private ScoreRepository scoreRepository;
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private PlatformService platformService;
 
     @Autowired
     private OverallRankRepository overallRankRepository;
@@ -92,5 +99,51 @@ public class OverallRankService {
             System.out.println("Error in fetching overall ranks\n"+ e);
         }
         return null;
+    }
+
+    public List<Map<String, Object>> getOverallRanksAndScoreForLeaderboard() {
+        List<Map<String, Object>> responseList = new ArrayList<>();
+        List<Platform> platformList = platformService.getAllPlatforms();
+        Map<Integer, Platform> platformsMap = new HashMap<>();
+        for (Platform platform: platformList) {
+            platformsMap.put(platform.getPlatformId(), platform);
+        }
+        List<User> userList = userService.getAllUsers();
+        List<Score> scores = scoreRepository.findAll();
+        List<OverallRank> overallRanks = overallRankRepository.findAll();
+        Map<Long, OverallRank> overallRankMap = overallRanks.stream()
+                .collect(Collectors.toMap(OverallRank::getUserId, Function.identity()));
+        for(User user: userList) {
+            Map<String, Object> userData = new HashMap<>();
+            if(user.getUserId()==0){
+                continue;
+            }
+            OverallRank overallRank = overallRankMap.getOrDefault(user.getUserId(), null);
+            if (overallRank != null) {
+                userData.put("rank", overallRank.getRank());
+                userData.put("overallScore", overallRank.getTotalScore());
+            }
+            userData.put("name", user.getFirstName() + " " + user.getLastName());
+            userData.put("luctUsername", user.getUsername());
+            for (Score score : scores.stream().filter(s -> (s.getUserId() == user.getUserId())).toList()) {
+                Platform platform = platformsMap.getOrDefault(score.getPlatformId(), null);
+                if (platform == null) {
+                    continue;
+                }
+                String platformName = platform.getPlatformName().toLowerCase();
+                userData.put(platformName + "LuctRank", score.getLuctRank());
+                userData.put(platformName + "ProblemsSolved", score.getNoOfProblemsSolved());
+                userData.put(platformName + "Rating", score.getRatings());
+                userData.put(platformName + "ContestsParticipated", score.getNoOfContests());
+                userData.put(platformName + "TotalScore", score.getCalculatedTotalScore());
+            }
+            responseList.add(userData);
+        }
+        responseList.sort((map1, map2) -> {
+            Double score1 = map1.get("overallScore") != null ? (Double) map1.get("overallScore") : 0.0;
+            Double score2 = map2.get("overallScore") != null ? (Double) map2.get("overallScore") : 0.0;
+            return score2.compareTo(score1);
+        });
+        return responseList;
     }
 }

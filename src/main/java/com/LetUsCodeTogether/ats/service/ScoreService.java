@@ -341,11 +341,10 @@ public class ScoreService {
                 score.setCalculatedTotalScore(score.getNoOfProblemsSolved() * 50);
             }
             connection.getInputStream().close();
-            return score;
         } catch (Exception e) {
             System.out.println("LeetCode Error: Internal Server Error, Please contact Administrator. "+e);
-            return null;
         }
+        return score;
     }
 
     private Score getScoreFromHackerrank(String usernameOnPlatform) throws Exception {

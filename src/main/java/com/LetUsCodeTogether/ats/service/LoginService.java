@@ -1,6 +1,7 @@
 package com.LetUsCodeTogether.ats.service;
 
 import com.LetUsCodeTogether.ats.beans.dto.Login;
+import com.LetUsCodeTogether.ats.beans.dto.SignupDto;
 import com.LetUsCodeTogether.ats.entity.User;
 import com.LetUsCodeTogether.ats.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,9 @@ import java.util.Map;
 public class LoginService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserService userService;
 
     public Map<String, Object> validateUserCreds(Login login) {
         User user = userRepository.findByUsernameOrEmail(login.getUsernameOrEmail(), login.getUsernameOrEmail())
@@ -29,5 +33,13 @@ public class LoginService {
             response.put("status", "No user exists with username: "+login.getUsernameOrEmail() +". Please reenter username again.");
         }
         return response;
+    }
+
+    public User signup(SignupDto signupDto) {
+        User user = new User();
+        user.setEmail(signupDto.getEmail());
+        user.setUsername(signupDto.getUsername());
+        user.setPassword(signupDto.getPassword());
+        return userService.createUser(user);
     }
 }
