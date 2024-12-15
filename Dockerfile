@@ -3,7 +3,7 @@ FROM maven:3.8.4-openjdk-17-slim AS build
 
 WORKDIR /app
 
-# Copy the project files into the container
+# Copy project files into the container
 COPY pom.xml .
 COPY src ./src
 
@@ -15,8 +15,8 @@ FROM openjdk:17-jdk-alpine
 
 WORKDIR /app
 
-# Copy the built JAR from the previous stage
-COPY --from=build /app/target/your-app.jar app.jar
+# Copy the built JAR from the build stage (update JAR name here)
+COPY --from=build /app/target/ats-0.0.1-SNAPSHOT.jar.original app.jar
 
 # Expose the application port
 EXPOSE 8080
