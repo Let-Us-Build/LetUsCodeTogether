@@ -23,7 +23,7 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User getUserById(Integer id) {
+    public User getUserById(Long id) {
         return userRepository.findById(id).orElse(null);
     }
 
@@ -39,7 +39,7 @@ public class UserService {
         return users;
     }
 
-    public String deleteUser(Integer userId) {
+    public String deleteUser(Long userId) {
         userRepository.deleteById(userId);
         return "User deleted successfully \n User Id: !! " + userId;
     }

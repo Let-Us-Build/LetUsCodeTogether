@@ -3,6 +3,7 @@ package com.LetUsCodeTogether.ats.entity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
+import java.sql.Date;
 import java.util.Calendar;
 
 @Entity
@@ -187,11 +188,11 @@ public class DailyActivity {
     public DailyActivity() {
     }
 
-    public DailyActivity(long activityId, long userId, Integer platformId, Long problemsSolved, Long contestsParticipated, Long ratings, Double points, Double calculatedTotalScore, Double previousScore, Double scoreDifference, Long streakInDays, Long overallStreakInDays, long createdBy, Calendar createdDate) {
-        this.activityId = activityId;
+    public DailyActivity(long userId, Date day, Long problemsSolved, Long contestsParticipated, Long ratings, Double points, Double calculatedTotalScore, Double previousScore, Double scoreDifference, Long streakInDays, Long overallStreakInDays) {
         this.userId = userId;
-        this.platformId = platformId;
         this.problemsSolved = problemsSolved;
+        this.createdDate = Calendar.getInstance();
+        this.createdDate.setTime(day);
         this.contestsParticipated = contestsParticipated;
         this.ratings = ratings;
         this.points = points;
@@ -200,7 +201,5 @@ public class DailyActivity {
         this.scoreDifference = scoreDifference;
         this.streakInDays = streakInDays;
         this.overallStreakInDays = overallStreakInDays;
-        this.createdBy = createdBy;
-        this.createdDate = createdDate;
     }
 }

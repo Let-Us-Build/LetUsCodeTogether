@@ -1,10 +1,14 @@
 package com.LetUsCodeTogether.ats.service;
 
+import com.LetUsCodeTogether.ats.beans.dto.DailyActivityDto;
+import com.LetUsCodeTogether.ats.beans.dto.DailyActivityRequestDto;
 import com.LetUsCodeTogether.ats.entity.DailyActivity;
 import com.LetUsCodeTogether.ats.repo.DailyActivityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
@@ -62,5 +66,25 @@ public class DailyActivityService {
 
     public DailyActivity getLatestActivity(Long userId) {
         return dailyActivityRepository.findTopByUserIdOrderByCreatedDateDesc(userId);
+    }
+
+    public List<DailyActivityDto> getActivityByUserIdInYear(DailyActivityRequestDto dailyActivityRequestDto){
+        List<DailyActivity> dailyActivities = dailyActivityRepository.findAllByUserIdAndYear(dailyActivityRequestDto.getUserId(), dailyActivityRequestDto.getYear());
+        List<DailyActivityDto> dailyActivityDtos = new ArrayList<>();
+        for(DailyActivity dailyActivity: dailyActivities) {
+            DailyActivityDto dailyActivityDto = new DailyActivityDto();
+            dailyActivityDto.setUserId(dailyActivity.getUserId());
+            dailyActivityDto.setPlatformId(dailyActivity.getPlatformId());
+            dailyActivityDto.setDay(dailyActivity.getCreatedDate().getTime());
+            dailyActivityDto.setTotalProblemsSolved(dailyActivity.getProblemsSolved());
+            dailyActivityDto.setTotalContestsParticipated(dailyActivity.getContestsParticipated());
+            dailyActivityDto.setTotalRatings(dailyActivity.getRatings());
+            dailyActivityDto.setTotalPoints(dailyActivity.getPoints());
+            dailyActivityDto.setTotalScoreDifference(dailyActivity.getScoreDifference());
+            dailyActivityDto.setLatestOverallStreakInDays(dailyActivity.getOverallStreakInDays());
+            dailyActivityDto.setLatestStreakInDays(dailyActivity.getStreakInDays());
+            dailyActivityDtos.add(dailyActivityDto);
+        }
+        return dailyActivityDtos;
     }
 }
