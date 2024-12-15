@@ -16,7 +16,7 @@ FROM openjdk:17-jdk-alpine
 WORKDIR /app
 
 # Copy the built JAR from the build stage (update JAR name here)
-COPY --from=build /app/target/ats-0.0.1-SNAPSHOT.jar.original app.jar
+COPY --from=build /app/target/ats-0.0.1-SNAPSHOT.jar app.jar
 
 # Expose the application port
 EXPOSE 8080
